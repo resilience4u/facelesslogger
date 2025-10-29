@@ -1,42 +1,65 @@
 {
-    "name": "ananiaslitz/facelesslog",
-    "description": "Inspirado no Noppera-bō, é uma biblioteca de logging que oculta ou anonimiza automaticamente informações sensíveis nos logs, protegendo a privacidade dos usuários.",
-    "type": "library",
-    "require-dev": {
-        "phpunit/php-timer": "^6.0",
-        "brain/monkey": "^2.6",
-        "phpunit/phpunit": "^10.5"
+  "name": "resilience4u/facelesslog",
+  "description": "Inspired by the Japanese faceless spirit Noppera-bō, FacelessLog is a privacy-first PHP logging library that automatically redacts or anonymizes sensitive information from logs, ensuring LGPD/GDPR compliance and user data protection.",
+  "type": "library",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Diego Ananias",
+      "email": "diegohsananias@gmail.com"
+    }
+  ],
+  "homepage": "https://github.com/resilience4u/facelesslog",
+  "keywords": [
+    "logging",
+    "privacy",
+    "anonymization",
+    "LGPD",
+    "GDPR",
+    "monolog",
+    "otel",
+    "php"
+  ],
+  "support": {
+    "issues": "https://github.com/resilience4u/facelesslog/issues",
+    "source": "https://github.com/resilience4u/facelesslog"
+  },
+  "require": {
+    "php": ">=8.3",
+    "guzzlehttp/promises": "^2.0",
+    "hyperf/di": "^3.0",
+    "monolog/monolog": "^3.9",
+    "nyholm/psr7": "^1.8",
+    "open-telemetry/api": "^1.0.0beta",
+    "open-telemetry/opentelemetry": "^1.0@beta",
+    "open-telemetry/opentelemetry-logger-monolog": "^0.0.4",
+    "php-http/httplug": "^2.4",
+    "symfony/http-client": "^6.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5",
+    "phpunit/php-timer": "^6.0",
+    "brain/monkey": "^2.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "FacelessLogger\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "FacelessLogger\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "beta",
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
     },
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "FacelessLog\\": "src/"
-        }
-    },
-    "authors": [
-        {
-            "name": "Diego Ananias",
-            "email": "diegohsananias@gmail.com"
-        }
-    ],
-    "require": {
-        "symfony/http-client": "^6.3",
-        "nyholm/psr7": "^1.8",
-        "guzzlehttp/promises": "^2.0",
-        "php-http/httplug": "^2.4",
-        "hyperf/di": "^3.0",
-        "open-telemetry/api": "^1.0.0beta",
-        "monolog/monolog": "^3.4",
-        "open-telemetry/opentelemetry-logger-monolog": "^0.0.4",
-        "open-telemetry/opentelemetry": "^1.0@beta"
-    },
-    "minimum-stability": "beta",
-    "config": {
-        "allow-plugins": {
-            "php-http/discovery": true
-        }
-    },
-   "scripts": {
-       "test": "phpctl phpunit"
-   }
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit --colors=always"
+  }
 }
