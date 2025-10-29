@@ -55,11 +55,12 @@
   "prefer-stable": true,
   "config": {
     "allow-plugins": {
-      "php-http/discovery": true
+      "php-http/discovery": true,
+      "tbachert/spi": true
     },
     "sort-packages": true
   },
   "scripts": {
-    "test": "vendor/bin/phpunit --colors=always"
+    "test": "vendor/bin/phpunit --colors=always --coverage-clover=build/logs/clover.xml"
   }
 }

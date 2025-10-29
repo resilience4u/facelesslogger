@@ -23,8 +23,8 @@ final class MaskStrategy implements AnonymizationStrategyInterface
 
     public function anonymize(mixed $value): mixed
     {
-        if ($value === null) {
-            return null;
+        if (!is_string($value)) {
+            return $value;
         }
 
         if (\is_string($value) || (\is_object($value) && method_exists($value, '__toString'))) {

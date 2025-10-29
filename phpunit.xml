@@ -1,24 +1,36 @@
-<?xml version="1.0"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         colors="true"
-         stopOnFailure="false"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
-         cacheDirectory=".phpunit.cache">
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+        bootstrap="vendor/autoload.php"
+        colors="true"
+        cacheDirectory=".phpunit.cache"
+        executionOrder="depends,defects"
+        failOnWarning="false"
+        failOnRisky="true"
+        failOnEmptyTestSuite="true"
+>
   <testsuites>
-    <testsuite name="FacelessLog Test Suite">
-      <directory>./tests</directory>
+    <testsuite name="FacelessLogger Test Suite">
+      <directory>tests</directory>
     </testsuite>
   </testsuites>
-  <coverage cacheDirectory=".phpunit.cache/code-coverage">
+
+  <source>
     <include>
-      <directory suffix=".php">./src</directory>
+      <directory suffix=".php">src</directory>
     </include>
+  </source>
+
+  <coverage>
     <report>
-      <clover outputFile="coverage.xml"/>
-      <html outputFile="coverage-html"/>
+      <clover outputFile="build/logs/clover.xml"/>
+      <html outputDirectory="build/coverage-html"/>
     </report>
   </coverage>
+
   <logging>
-    <testdoxHtml outputFile="phpunit-report.html"/>
+    <testdoxHtml outputFile="build/reports/testdox.html"/>
+    <junit outputFile="build/reports/junit.xml"/>
   </logging>
 </phpunit>
