@@ -1,4 +1,12 @@
 # FacelessLogger
+[![PHP Version](https://img.shields.io/badge/PHP-8.3%2B-blue.svg?logo=php&logoColor=white)](https://www.php.net/releases/8.3/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
+[![Build Status](https://github.com/resilience4u/facelesslogger/actions/workflows/php.yml/badge.svg)](https://github.com/resilience4u/facelesslogger/actions)
+[![codecov](https://codecov.io/gh/resilience4u/facelesslogger/branch/main/graph/badge.svg?token=YOUR_TOKEN_HERE)](https://codecov.io/gh/resilience4u/facelesslogger)
+[![Static Analysis](https://img.shields.io/badge/Static%20Analysis-PHPStan%20%2F%20Psalm-blueviolet.svg)](https://phpstan.org/)
+[![Tested with PHPUnit](https://img.shields.io/badge/Tested%20with-PHPUnit-brightgreen.svg)](https://phpunit.de/)
+[![Supported Frameworks](https://img.shields.io/badge/Supports-Laravel%20%7C%20Hyperf-orange.svg)](https://github.com/resilience4u/facelesslogger)
+[![Made with ❤️ by Resilience4u](https://img.shields.io/badge/made%20with-%E2%9D%A4%EF%B8%8F%20by%20Resilience4u-blue.svg)](https://github.com/resilience4u)
 
 > Inspired by the Japanese *faceless spirit* **Noppera-bō**,  
 > **FacelessLogger** is a privacy-first PHP logging library that automatically redacts or anonymizes sensitive information from logs —  
