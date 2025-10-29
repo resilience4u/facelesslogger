@@ -1,5 +1,5 @@
 {
-  "name": "resilience4u/facelesslog",
+  "name": "resilience4u/facelesslogger",
   "description": "Inspired by the Japanese faceless spirit Noppera-bō, FacelessLog is a privacy-first PHP logging library that automatically redacts or anonymizes sensitive information from logs, ensuring LGPD/GDPR compliance and user data protection.",
   "type": "library",
   "license": "Apache-2.0",
