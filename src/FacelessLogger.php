@@ -9,6 +9,7 @@ use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\HandlerInterface;
+use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
 use OpenTelemetry\Contrib\Logs\Monolog\Handler as OTelHandler;
 use OpenTelemetry\SDK\Common\Attribute\AttributesFactory;
@@ -17,7 +18,6 @@ use OpenTelemetry\SDK\Logs\LoggerProvider;
 use OpenTelemetry\SDK\Logs\Exporter\ConsoleExporter;
 use OpenTelemetry\SDK\Logs\Processor\SimpleLogRecordProcessor;
 use OpenTelemetry\SDK\Common\Export\Stream\StreamTransportFactory;
-use OpenTelemetry\SDK\Common\Export\TransportInterface;
 use Stringable;
 
 /**
@@ -38,10 +38,8 @@ final class FacelessLogger
     ): self {
         $instance = new self();
 
-        // ✅ Create single Logger instance early
         $instance->logger = new Logger($channel);
 
-        // ✅ Default handler
         $instance->withHandler(new StreamHandler('php://stdout', Logger::DEBUG));
 
         $processor ??= new AnonymizationProcessor();
@@ -52,7 +50,6 @@ final class FacelessLogger
 
     public function withHandler(HandlerInterface $handler): self
     {
-        // No new logger — always operate on the same instance
         $this->logger->pushHandler($handler);
         return $this;
     }
@@ -89,8 +86,7 @@ final class FacelessLogger
 
             $provider = new LoggerProvider($processor, $scopeFactory);
 
-            // ✅ Custom wrapper handler to anonymize before sending to OTel
-            $anonymizingHandler = new class($provider, Logger::DEBUG, $this->logger->getProcessors()) extends OTelHandler {
+            $anonymizingHandler = new class ($provider, Level::Debug, $this->logger->getProcessors()) extends OTelHandler {
                 protected array $processors;
 
                 public function __construct($provider, int $level, array $processors)
@@ -99,31 +95,27 @@ final class FacelessLogger
                     $this->processors = $processors;
                 }
 
-                public function handle(array|\Monolog\LogRecord $record): bool
+                public function handle(array|LogRecord $record): bool
                 {
-                    // Ensure record is a LogRecord instance
-                    $logRecord = $record instanceof \Monolog\LogRecord
+                    $logRecord = $record instanceof LogRecord
                         ? $record
-                        : new \Monolog\LogRecord(
+                        : new LogRecord(
                             datetime: $record['datetime'] ?? new \DateTimeImmutable(),
                             channel: $record['channel'] ?? 'app',
-                            level: \Monolog\Level::fromName($record['level_name'] ?? 'INFO'),
+                            level: Level::fromName($record['level_name'] ?? 'INFO'),
                             message: $record['message'] ?? '',
                             context: $record['context'] ?? [],
                             extra: $record['extra'] ?? []
                         );
 
-                    // Apply processors (AnonymizationProcessor, etc.)
                     foreach ($this->processors as $processor) {
                         $logRecord = $processor($logRecord);
                     }
 
-                    // Send processed record to the OTel handler
                     return parent::handle($logRecord);
                 }
             };
 
-            // ✅ Human-readable handler
             $consoleHandler = new StreamHandler('php://stdout', Logger::INFO);
 
             $this->withHandler($consoleHandler);
@@ -153,8 +145,6 @@ final class FacelessLogger
     {
         return $this->logger;
     }
-
-    // Proxy convenience methods ---------------------------------------
 
     public function debug(string|Stringable $message, array $context = []): void
     {
