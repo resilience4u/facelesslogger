@@ -18,15 +18,11 @@ use OpenTelemetry\SDK\Logs\LoggerProvider;
 use OpenTelemetry\SDK\Logs\Exporter\ConsoleExporter;
 use OpenTelemetry\SDK\Logs\Processor\SimpleLogRecordProcessor;
 use OpenTelemetry\SDK\Common\Export\Stream\StreamTransportFactory;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stringable;
 
-/**
- * FacelessLogger
- *
- * A developer-friendly facade around Monolog, preconfigured with LGPD-first anonymization.
- * Ideal for Laravel, Hyperf or standalone apps that need privacy-safe logging.
- */
-final class FacelessLogger
+final class FacelessLogger implements LoggerInterface
 {
     private Logger $logger;
     private bool $telemetryEnabled = false;
@@ -62,15 +58,10 @@ final class FacelessLogger
 
     /**
      * Enables OpenTelemetry integration safely.
-     * Uses a StreamTransport for ConsoleExporter as fallback.
      */
     public function withTelemetry(): self
     {
-        if ($this->isTelemetryEnabled()) {
-            return $this;
-        }
-
-        if (!class_exists(OTelHandler::class)) {
+        if ($this->isTelemetryEnabled() || !class_exists(OTelHandler::class)) {
             return $this;
         }
 
@@ -88,13 +79,11 @@ final class FacelessLogger
 
             $anonymizingHandler = new class ($provider, Level::Debug, $this->logger->getProcessors()) extends OTelHandler {
                 protected array $processors;
-
                 public function __construct($provider, int $level, array $processors)
                 {
                     parent::__construct($provider, $level);
                     $this->processors = $processors;
                 }
-
                 public function handle(array|LogRecord $record): bool
                 {
                     $logRecord = $record instanceof LogRecord
@@ -107,20 +96,16 @@ final class FacelessLogger
                             context: $record['context'] ?? [],
                             extra: $record['extra'] ?? []
                         );
-
                     foreach ($this->processors as $processor) {
                         $logRecord = $processor($logRecord);
                     }
-
                     return parent::handle($logRecord);
                 }
             };
 
             $consoleHandler = new StreamHandler('php://stdout', Logger::INFO);
-
             $this->withHandler($consoleHandler);
             $this->withHandler($anonymizingHandler);
-
             $this->telemetryEnabled = true;
         } catch (\Throwable $e) {
             $this->logger->warning('OpenTelemetry integration failed', [
@@ -131,11 +116,6 @@ final class FacelessLogger
         return $this;
     }
 
-
-
-    /**
-     * Whether telemetry is currently active.
-     */
     private function isTelemetryEnabled(): bool
     {
         return $this->telemetryEnabled;
@@ -146,33 +126,29 @@ final class FacelessLogger
         return $this->logger;
     }
 
-    public function debug(string|Stringable $message, array $context = []): void
+    public function log($level, $message, array $context = []): void
     {
-        $this->logger->debug($message, $context);
+        $level = match ($level) {
+            LogLevel::EMERGENCY => Logger::EMERGENCY,
+            LogLevel::ALERT     => Logger::ALERT,
+            LogLevel::CRITICAL  => Logger::CRITICAL,
+            LogLevel::ERROR     => Logger::ERROR,
+            LogLevel::WARNING   => Logger::WARNING,
+            LogLevel::NOTICE    => Logger::NOTICE,
+            LogLevel::INFO      => Logger::INFO,
+            LogLevel::DEBUG     => Logger::DEBUG,
+            default              => Logger::INFO,
+        };
+
+        $this->logger->addRecord($level, (string) $message, $context);
     }
 
-    public function info(string|Stringable $message, array $context = []): void
-    {
-        $this->logger->info($message, $context);
-    }
-
-    public function warning(string|Stringable $message, array $context = []): void
-    {
-        $this->logger->warning($message, $context);
-    }
-
-    public function error(string|Stringable $message, array $context = []): void
-    {
-        $this->logger->error($message, $context);
-    }
-
-    public function critical(string|Stringable $message, array $context = []): void
-    {
-        $this->logger->critical($message, $context);
-    }
-
-    public function emergency(string|Stringable $message, array $context = []): void
-    {
-        $this->logger->emergency($message, $context);
-    }
+    public function emergency(string|Stringable $message, array $context = []): void { $this->log(LogLevel::EMERGENCY, $message, $context); }
+    public function alert(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::ALERT, $message, $context); }
+    public function critical(string|Stringable $message, array $context = []): void  { $this->log(LogLevel::CRITICAL, $message, $context); }
+    public function error(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::ERROR, $message, $context); }
+    public function warning(string|Stringable $message, array $context = []): void   { $this->log(LogLevel::WARNING, $message, $context); }
+    public function notice(string|Stringable $message, array $context = []): void    { $this->log(LogLevel::NOTICE, $message, $context); }
+    public function info(string|Stringable $message, array $context = []): void      { $this->log(LogLevel::INFO, $message, $context); }
+    public function debug(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::DEBUG, $message, $context); }
 }
