@@ -6,6 +6,7 @@ namespace FacelessLogger\Anonymization\AutoDetect;
 
 
 use FacelessLogger\Anonymization\AnonymizationStrategyInterface;
+use FacelessLogger\Anonymization\Strategy\MaskEmailStrategy;
 
 /**
  * Registry for auto-detection rules.
@@ -19,6 +20,22 @@ class AutoDetectionRegistry
     public function register(AutoDetectionRuleInterface $rule): void
     {
         $this->rules[] = $rule;
+    }
+
+    public static function default(): self
+    {
+        $registry = new self();
+
+        $registry->register('email', new MaskEmailStrategy());
+        $registry->register('cpf', new \FacelessLogger\Anonymization\Strategy\MaskCpfStrategy());
+        $registry->register('password', new \FacelessLogger\Anonymization\Strategy\RedactStrategy());
+        $registry->register('token', new \FacelessLogger\Anonymization\Strategy\RedactStrategy());
+        $registry->register('authToken', new \FacelessLogger\Anonymization\Strategy\RedactStrategy());
+        $registry->register('card_number', new \FacelessLogger\Anonymization\Strategy\MaskCardStrategy());
+        $registry->register('ip', new \FacelessLogger\Anonymization\Strategy\MaskIpStrategy());
+        $registry->register('mobile', new \FacelessLogger\Anonymization\Strategy\MaskPhoneStrategy());
+
+        return $registry;
     }
 
     /**

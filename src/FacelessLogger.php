@@ -38,8 +38,20 @@ final class FacelessLogger implements LoggerInterface
 
         $instance->withHandler(new StreamHandler('php://stdout', Logger::DEBUG));
 
-        $processor ??= new AnonymizationProcessor();
-        $instance->withProcessor($processor);
+        if ($autoDetect) {
+            if ($processor === null && class_exists(AnonymizationProcessor::class)) {
+                $processor = new AnonymizationProcessor();
+            }
+
+            $otelEnabled = getenv('OTEL_ENABLED') ?: getenv('OTEL_EXPORTER_OTLP_ENDPOINT');
+            if ($otelEnabled) {
+                $instance->withTelemetry();
+            }
+        }
+
+        if ($processor) {
+            $instance->withProcessor($processor);
+        }
 
         return $instance;
     }
@@ -77,7 +89,7 @@ final class FacelessLogger implements LoggerInterface
 
             $provider = new LoggerProvider($processor, $scopeFactory);
 
-            $anonymizingHandler = new class ($provider, Level::Debug, $this->logger->getProcessors()) extends OTelHandler {
+            $anonymizingHandler = new class ($provider, Level::Debug->value, $this->logger->getProcessors()) extends OTelHandler {
                 protected array $processors;
                 public function __construct($provider, int $level, array $processors)
                 {
@@ -143,12 +155,36 @@ final class FacelessLogger implements LoggerInterface
         $this->logger->addRecord($level, (string) $message, $context);
     }
 
-    public function emergency(string|Stringable $message, array $context = []): void { $this->log(LogLevel::EMERGENCY, $message, $context); }
-    public function alert(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::ALERT, $message, $context); }
-    public function critical(string|Stringable $message, array $context = []): void  { $this->log(LogLevel::CRITICAL, $message, $context); }
-    public function error(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::ERROR, $message, $context); }
-    public function warning(string|Stringable $message, array $context = []): void   { $this->log(LogLevel::WARNING, $message, $context); }
-    public function notice(string|Stringable $message, array $context = []): void    { $this->log(LogLevel::NOTICE, $message, $context); }
-    public function info(string|Stringable $message, array $context = []): void      { $this->log(LogLevel::INFO, $message, $context); }
-    public function debug(string|Stringable $message, array $context = []): void     { $this->log(LogLevel::DEBUG, $message, $context); }
+    public function emergency(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::EMERGENCY, $message, $context);
+    }
+    public function alert(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::ALERT, $message, $context);
+    }
+    public function critical(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::CRITICAL, $message, $context);
+    }
+    public function error(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::ERROR, $message, $context);
+    }
+    public function warning(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::WARNING, $message, $context);
+    }
+    public function notice(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::NOTICE, $message, $context);
+    }
+    public function info(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::INFO, $message, $context);
+    }
+    public function debug(string|Stringable $message, array $context = []): void
+    {
+        $this->log(LogLevel::DEBUG, $message, $context);
+    }
 }
