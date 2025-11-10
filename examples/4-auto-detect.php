@@ -20,7 +20,7 @@ $logger = new Logger('faceless');
 $logger->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
 
 // Enable automatic detection mode
-$processor = new AnonymizationProcessor(autoDetect: true);
+$processor = new AnonymizationProcessor();
 $logger->pushProcessor($processor);
 
 $logger->info('User submitted registration form', [
