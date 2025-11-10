@@ -12,6 +12,7 @@ use Monolog\Handler\HandlerInterface;
 use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
 use OpenTelemetry\Contrib\Logs\Monolog\Handler as OTelHandler;
+use OpenTelemetry\Contrib\Otlp\OtlpHttpTransportFactory as OtlpHttpTransportFactoryAlias;
 use OpenTelemetry\SDK\Common\Attribute\AttributesFactory;
 use OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
 use OpenTelemetry\SDK\Logs\LoggerProvider;
@@ -78,8 +79,18 @@ final class FacelessLogger implements LoggerInterface
         }
 
         try {
-            $transportFactory = new StreamTransportFactory();
-            $transport = $transportFactory->create('php://stdout', 'application/json');
+            $otelEndpoint = getenv('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT')
+                ?: getenv('OTEL_EXPORTER_OTLP_ENDPOINT');
+
+            if ($otelEndpoint) {
+                $transport = (new OtlpHttpTransportFactoryAlias())->create(
+                    endpoint: $otelEndpoint,
+                    contentType: 'application/x-protobuf'
+                );
+            } else {
+                $transportFactory = new StreamTransportFactory();
+                $transport = $transportFactory->create('php://stderr', 'application/json');
+            }
 
             $exporter   = new ConsoleExporter($transport);
             $processor  = new SimpleLogRecordProcessor($exporter);
@@ -96,6 +107,7 @@ final class FacelessLogger implements LoggerInterface
                     parent::__construct($provider, $level);
                     $this->processors = $processors;
                 }
+
                 public function handle(array|LogRecord $record): bool
                 {
                     $logRecord = $record instanceof LogRecord
@@ -108,15 +120,19 @@ final class FacelessLogger implements LoggerInterface
                             context: $record['context'] ?? [],
                             extra: $record['extra'] ?? []
                         );
+
                     foreach ($this->processors as $processor) {
                         $logRecord = $processor($logRecord);
                     }
+
                     return parent::handle($logRecord);
                 }
             };
 
-            $consoleHandler = new StreamHandler('php://stdout', Logger::INFO);
-            $this->withHandler($consoleHandler);
+            if (!$this->isTelemetryEnabled()) {
+                $this->withHandler(new StreamHandler('php://stdout', Level::Info));
+            }
+
             $this->withHandler($anonymizingHandler);
             $this->telemetryEnabled = true;
         } catch (\Throwable $e) {

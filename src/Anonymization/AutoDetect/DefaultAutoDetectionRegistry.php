@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace FacelessLogger\Anonymization\AutoDetect;
 
-use FacelessLogger\Anonymization\AutoDetect\Rules\{
-    EmailRule,
-    CPFRule,
-    PasswordRule,
-    TokenRule
-};
+use FacelessLogger\Anonymization\AutoDetect\Rules\{CreditCardRule, EmailRule, CPFRule, PasswordRule, TokenRule};
 
 /**
  * Default auto-detection registry used when the user
@@ -26,5 +21,6 @@ class DefaultAutoDetectionRegistry extends AutoDetectionRegistry
         $this->register(new CPFRule());
         $this->register(new PasswordRule());
         $this->register(new TokenRule());
+        $this->register(new CreditCardRule());
     }
 }
