@@ -37,21 +37,24 @@ final class FacelessLogger implements LoggerInterface
 
         $instance->logger = new Logger($channel);
 
-        $instance->withHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+        $otelEnabled = getenv('OTEL_ENABLED') ?: getenv('OTEL_EXPORTER_OTLP_ENDPOINT');
+
+        if (!$otelEnabled) {
+            $instance->withHandler(new StreamHandler('php://stdout', Logger::DEBUG));
+        }
 
         if ($autoDetect) {
             if ($processor === null && class_exists(AnonymizationProcessor::class)) {
                 $processor = new AnonymizationProcessor();
             }
-
-            $otelEnabled = getenv('OTEL_ENABLED') ?: getenv('OTEL_EXPORTER_OTLP_ENDPOINT');
-            if ($otelEnabled) {
-                $instance->withTelemetry();
-            }
         }
 
         if ($processor) {
             $instance->withProcessor($processor);
+        }
+
+        if ($otelEnabled) {
+            $instance->withTelemetry();
         }
 
         return $instance;
@@ -69,9 +72,6 @@ final class FacelessLogger implements LoggerInterface
         return $this;
     }
 
-    /**
-     * Enables OpenTelemetry integration safely.
-     */
     public function withTelemetry(): self
     {
         if ($this->isTelemetryEnabled() || !class_exists(OTelHandler::class)) {
@@ -79,18 +79,8 @@ final class FacelessLogger implements LoggerInterface
         }
 
         try {
-            $otelEndpoint = getenv('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT')
-                ?: getenv('OTEL_EXPORTER_OTLP_ENDPOINT');
-
-            if ($otelEndpoint) {
-                $transport = (new OtlpHttpTransportFactoryAlias())->create(
-                    endpoint: $otelEndpoint,
-                    contentType: 'application/x-protobuf'
-                );
-            } else {
-                $transportFactory = new StreamTransportFactory();
-                $transport = $transportFactory->create('php://stderr', 'application/json');
-            }
+            $transportFactory = new StreamTransportFactory();
+            $transport = $transportFactory->create('php://stdout', 'application/json');
 
             $exporter   = new ConsoleExporter($transport);
             $processor  = new SimpleLogRecordProcessor($exporter);
@@ -107,7 +97,6 @@ final class FacelessLogger implements LoggerInterface
                     parent::__construct($provider, $level);
                     $this->processors = $processors;
                 }
-
                 public function handle(array|LogRecord $record): bool
                 {
                     $logRecord = $record instanceof LogRecord
@@ -120,20 +109,14 @@ final class FacelessLogger implements LoggerInterface
                             context: $record['context'] ?? [],
                             extra: $record['extra'] ?? []
                         );
-
                     foreach ($this->processors as $processor) {
                         $logRecord = $processor($logRecord);
                     }
-
                     return parent::handle($logRecord);
                 }
             };
 
-            if (!$this->isTelemetryEnabled()) {
-                $this->withHandler(new StreamHandler('php://stdout', Level::Info));
-            }
-
-            $this->withHandler($anonymizingHandler);
+            $this->logger->setHandlers([$anonymizingHandler]);
             $this->telemetryEnabled = true;
         } catch (\Throwable $e) {
             $this->logger->warning('OpenTelemetry integration failed', [
